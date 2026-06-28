@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tetranked</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="brand-block">
+          <p class="eyebrow">Arcade Edition</p>
+          <h1>Tetranked</h1>
+          <p class="subtitle">
+            A polished web version of classic Tetris with crisp visuals and
+            responsive controls.
+          </p>
+        </div>
+      </section>
+
+      <section class="game-panel">
+        <div class="board-card">
+          <canvas id="board" width="300" height="600"></canvas>
+          <div id="overlay" class="overlay visible">
+            <h2 id="overlay-title">Press Start</h2>
+            <p id="overlay-copy">
+              Use arrow keys to move, rotate, and drop pieces.
+            </p>
+          </div>
+        </div>
+
+        <aside class="side-panel">
+          <div class="stat-card">
+            <h2>Score</h2>
+            <div id="score" class="value">0</div>
+          </div>
+          <div class="stat-card">
+            <h2>Lines</h2>
+            <div id="lines" class="value">0</div>
+          </div>
+          <div class="stat-card">
+            <h2>Level</h2>
+            <div id="level" class="value">1</div>
+          </div>
+          <div class="stat-card">
+            <h2>Best</h2>
+            <div id="best" class="value">0</div>
+          </div>
+
+          <div class="stat-card preview-card">
+            <h2>Next</h2>
+            <canvas id="next" width="180" height="180"></canvas>
+          </div>
+
+          <div class="controls-card">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="restartBtn">Restart</button>
+          </div>
+
+          <div class="controls-card compact">
+            <p><strong>Controls</strong></p>
+            <ul>
+              <li>← → Move</li>
+              <li>↑ Rotate</li>
+              <li>↓ Soft drop</li>
+              <li>Space Hard drop</li>
+              <li>P Pause</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
