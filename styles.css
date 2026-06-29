@@ -16,48 +16,59 @@
 
 body {
   margin: 0;
-  font-family: Inter, "Segoe UI", Roboto, sans-serif;
+  font-family: "Space Grotesk", "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+  font-weight: 500;
+  font-size: 1.08rem;
   background:
     radial-gradient(circle at top left, rgba(97, 218, 251, 0.18), transparent 28%),
     linear-gradient(135deg, var(--bg), #0f1730 60%, #050816);
   color: var(--text);
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 6px 10px 10px;
+  overflow-x: hidden;
 }
 
 .app-shell {
-  width: min(1100px, 100%);
+  width: min(1240px, 100%);
 }
 
 .hero {
-  margin-bottom: 22px;
+  margin-bottom: 8px;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 3px;
   text-transform: uppercase;
-  letter-spacing: 0.38em;
+  letter-spacing: 0.28em;
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: 0.68rem;
 }
 
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2.8rem, 8.9vw, 6.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-family: 'Jersey 20', "Chunko Bold Demo", "Space Grotesk", "Arial Black", sans-serif;
+  line-height: 0.95;
+  text-transform: uppercase;
 }
 
 .subtitle {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  max-width: 640px;
+  max-width: 620px;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .game-panel {
   display: grid;
-  grid-template-columns: 1.2fr 0.7fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.6fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -67,22 +78,49 @@ h1 {
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
-  border-radius: 22px;
+  border-radius: 10px;
 }
 
 .board-card {
-  padding: 18px;
+  padding: 10px;
   position: relative;
   display: grid;
   place-items: center;
   overflow: hidden;
+  will-change: transform;
+}
+
+.board-card.shake {
+  animation: board-shake 0.22s ease;
 }
 
 canvas {
   display: block;
-  border-radius: 16px;
+  border-radius: 4px;
   background: linear-gradient(180deg, rgba(13, 17, 30, 0.96), rgba(9, 12, 24, 0.96));
   border: 1px solid rgba(255, 255, 255, 0.08);
+  width: min(44vw, 288px);
+  height: auto;
+  max-width: 288px;
+}
+
+@keyframes board-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-3.45px, 0, 0);
+  }
+  40% {
+    transform: translate3d(3.45px, 0, 0);
+  }
+  60% {
+    transform: translate3d(-2.3px, 0, 0);
+  }
+  80% {
+    transform: translate3d(2.3px, 0, 0);
+  }
 }
 
 .overlay {
@@ -103,9 +141,11 @@ canvas {
   opacity: 1;
 }
 
-.overlay h2,
-.overlay p {
-  margin: 0;
+.overlay h2 {
+  font-family: 'Jersey 20', "Chunko Bold Demo", "Space Grotesk", "Arial Black", sans-serif;
+  font-size: clamp(2.3rem, 4.7vw, 3.25rem);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .overlay p {
@@ -115,39 +155,53 @@ canvas {
 
 .side-panel {
   display: grid;
-  gap: 14px;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
 }
 
 .stat-card,
 .controls-card {
-  padding: 16px 18px;
+  padding: 8px 10px;
 }
 
 .stat-card h2 {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
+  margin: 0 0 3px;
+  font-size: 0.7rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
+  font-weight: 700;
 }
 
 .value {
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.preview-card {
+  grid-column: span 2;
 }
 
 .preview-card canvas {
-  margin-top: 10px;
+  margin-top: 4px;
   width: 100%;
-  max-width: 180px;
+  max-width: 108px;
   height: auto;
+}
+
+.controls-card {
+  grid-column: span 2;
 }
 
 .controls-card button {
   width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 6px 8px;
+  margin-bottom: 5px;
+  font-family: inherit;
+  font-weight: 700;
   border: none;
   border-radius: 999px;
   font-weight: 700;
@@ -164,18 +218,20 @@ canvas {
 }
 
 .controls-card.compact {
-  padding-top: 12px;
+  padding-top: 8px;
+  grid-column: span 2;
 }
 
 .controls-card ul {
-  padding-left: 18px;
+  padding-left: 14px;
   color: var(--muted);
-  margin: 6px 0 0;
+  margin: 4px 0 0;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 820px) {
   body {
-    padding: 16px;
+    padding: 8px;
   }
 
   .game-panel {
@@ -186,7 +242,9 @@ canvas {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .preview-card {
+  .preview-card,
+  .controls-card,
+  .controls-card.compact {
     grid-column: span 2;
   }
 }
@@ -196,7 +254,9 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .preview-card {
+  .preview-card,
+  .controls-card,
+  .controls-card.compact {
     grid-column: span 1;
   }
 }
