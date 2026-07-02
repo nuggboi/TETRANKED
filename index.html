@@ -32,10 +32,27 @@
         <div class="board-card">
           <canvas id="board" width="300" height="600"></canvas>
           <div id="overlay" class="overlay visible">
-            <h2 id="overlay-title">Press Start</h2>
-            <p id="overlay-copy">
-              Use arrow keys to move, rotate, and drop pieces.
-            </p>
+            <div class="overlay-card">
+              <h2 id="overlay-title">Choose a mode</h2>
+              <p id="overlay-copy">
+                Pick Classic, Dig, or Mini, then press Start.
+              </p>
+              <div class="mode-picker" id="modePicker">
+                <button
+                  class="mode-btn active"
+                  type="button"
+                  data-mode="classic"
+                >
+                  Classic
+                </button>
+                <button class="mode-btn" type="button" data-mode="dig">
+                  Dig
+                </button>
+                <button class="mode-btn" type="button" data-mode="mini">
+                  Mini
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -14,13 +14,19 @@ const overlayCopy = document.getElementById('overlay-copy');
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const restartBtn = document.getElementById('restartBtn');
+const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
 
-const COLS = 10;
-const ROWS = 20;
-const BLOCK_SIZE = 30;
-const PREVIEW_SIZE = 42;
+let COLS = 10;
+let ROWS = 20;
+let BLOCK_SIZE = 30;
+let PREVIEW_SIZE = 42;
 const CLEAR_ANIMATION_DURATION = 220;
 const SHAKE_DURATION = 220;
+const MODE_CONFIG = {
+  classic: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: 'Classic' },
+  mini: { cols: 8, rows: 16, blockSize: 24, previewSize: 30, label: 'Mini' },
+  dig: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: 'Dig' }
+};
 const COLORS = {
   I: '#61dafb',
   O: '#ffd166',
@@ -28,7 +34,8 @@ const COLORS = {
   S: '#4cd964',
   Z: '#ff5f7d',
   J: '#4d9de0',
-  L: '#ff9f1c'
+  L: '#ff9f1c',
+  G: '#8e97a6'
 };
 
 const SHAPES = {
@@ -41,7 +48,7 @@ const SHAPES = {
   L: [[0, 0, 1], [1, 1, 1], [0, 0, 0]]
 };
 
-let board = createBoard();
+let board = [];
 let currentPiece = null;
 let nextPiece = null;
 let score = 0;
@@ -58,6 +65,8 @@ let boardShakeTimer = null;
 let slamFlashActive = false;
 let slamFlashTimer = null;
 let slamPiece = null;
+let gameMode = 'classic';
+let digRubbleRemaining = 0;
 
 bestEl.textContent = bestScore;
 
@@ -98,6 +107,49 @@ loadSfx('clear', 'sounds/clear/clearhigh.wav');
 loadSfx('clear', 'sounds/clear/clearlow.wav');
 loadSfx('restart', 'sounds/restart.wav');
 loadSfx('rotate', 'sounds/rotate.wav');
+
+function applyModeConfig(mode) {
+  const config = MODE_CONFIG[mode] || MODE_CONFIG.classic;
+  COLS = config.cols;
+  ROWS = config.rows;
+  BLOCK_SIZE = config.blockSize;
+  PREVIEW_SIZE = config.previewSize;
+  boardCanvas.width = COLS * BLOCK_SIZE;
+  boardCanvas.height = ROWS * BLOCK_SIZE;
+  nextCanvas.width = 180;
+  nextCanvas.height = 180;
+  boardCanvas.style.width = `${COLS * BLOCK_SIZE}px`;
+  boardCanvas.style.height = `${ROWS * BLOCK_SIZE}px`;
+}
+
+function selectMode(mode) {
+  gameMode = mode;
+  applyModeConfig(mode);
+  modeButtons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.mode === mode);
+  });
+  if (!currentPiece && !gameOver && !paused) {
+    draw();
+  }
+}
+
+function setupBoardForMode() {
+  board = createBoard();
+  digRubbleRemaining = 0;
+
+  if (gameMode !== 'dig') return;
+
+  const startRow = Math.max(0, ROWS - 8);
+  for (let y = startRow; y < ROWS; y += 1) {
+    const gap = (y - startRow + 1) % COLS;
+    for (let x = 0; x < COLS; x += 1) {
+      if (x !== gap) {
+        board[y][x] = 'G';
+        digRubbleRemaining += 1;
+      }
+    }
+  }
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
@@ -261,6 +313,12 @@ function clearLines() {
 
   if (rowsToClear.length === 0) return [];
 
+  let rubbleCleared = 0;
+  if (gameMode === 'dig') {
+    rubbleCleared = rowsToClear.reduce((count, rowIndex) => count + board[rowIndex].filter((cell) => cell === 'G').length, 0);
+    digRubbleRemaining = Math.max(0, digRubbleRemaining - rubbleCleared);
+  }
+
   lines += rowsToClear.length;
   score += [0, 100, 300, 500, 800][rowsToClear.length] * level;
   level = Math.floor(lines / 10) + 1;
@@ -326,6 +384,15 @@ function finalizeClearAnimation() {
     board = [...emptyRows, ...remainingRows];
   }
 
+  if (gameMode === 'dig' && digRubbleRemaining <= 0) {
+    gameOver = true;
+    paused = false;
+    updateOverlay('Dig Complete', 'You cleared all the rubble.');
+    updateStats();
+    draw();
+    return;
+  }
+
   spawnPiece();
   updateStats();
   draw();
@@ -361,7 +428,8 @@ function updateDropSpeed() {
 }
 
 function startGame() {
-  board = createBoard();
+  applyModeConfig(gameMode);
+  setupBoardForMode();
   score = 0;
   lines = 0;
   level = 1;
@@ -526,7 +594,7 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
-  if (gameOver || paused) {
+  if (gameOver || paused || !currentPiece) {
     if (key === 'Enter') {
       startGame();
     }
@@ -569,7 +637,11 @@ window.addEventListener('keydown', (event) => {
 startBtn.addEventListener('click', startGame);
 pauseBtn.addEventListener('click', pauseGame);
 restartBtn.addEventListener('click', restartGame);
+modeButtons.forEach((button) => {
+  button.addEventListener('click', () => selectMode(button.dataset.mode));
+});
 
+applyModeConfig(gameMode);
+setupBoardForMode();
 updateStats();
 draw();
-startGame();
