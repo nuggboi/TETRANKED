@@ -21,102 +21,101 @@ let ROWS = 20;
 let BLOCK_SIZE = 30;
 let PREVIEW_SIZE = 42;
 const CLEAR_ANIMATION_DURATION = 220;
-const SHAKE_DURATION = 220;
-const MODE_CONFIG = {
-  classic: {
-    cols: 10,
-    rows: 20,
-    blockSize: 30,
-    previewSize: 42,
-    label: "Classic",
-  },
-  mini: { cols: 8, rows: 16, blockSize: 24, previewSize: 30, label: "Mini" },
-  dig: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: "Dig" },
-};
-const COLORS = {
-  I: "#61dafb",
-  O: "#ffd166",
-  T: "#c77dff",
-  S: "#4cd964",
-  Z: "#ff5f7d",
-  J: "#4d9de0",
-  L: "#ff9f1c",
-  G: "#8e97a6",
-};
+// --- Mobile gesture support (swipe & tap) ---
+// Prevent default touch gestures on the canvas
+if (boardCanvas) {
+  boardCanvas.style.touchAction = "none";
+}
 
-const SHAPES = {
-  I: [
-    [0, 0, 0, 0],
-    [1, 1, 1, 1],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-  ],
-  O: [
-    [1, 1],
-    [1, 1],
-  ],
-  T: [
-    [0, 1, 0],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-  S: [
-    [0, 1, 1],
-    [1, 1, 0],
-    [0, 0, 0],
-  ],
-  Z: [
-    [1, 1, 0],
-    [0, 1, 1],
-    [0, 0, 0],
-  ],
-  J: [
-    [1, 0, 0],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-  L: [
-    [0, 0, 1],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-};
+let _ptrDown = false;
+let _startX = 0;
+let _startY = 0;
+let _startTime = 0;
+let _moved = false;
 
-let board = [];
-let currentPiece = null;
-let nextPiece = null;
-let score = 0;
-let lines = 0;
-let level = 1;
-let gameOver = false;
-let paused = false;
-let dropInterval = null;
-let bestScore = Number(localStorage.getItem("tetranked-best") || 0);
-let clearAnimationRows = [];
-let clearAnimationStartTime = 0;
-let clearAnimationFrame = null;
-let boardShakeTimer = null;
-let slamFlashActive = false;
-let slamFlashTimer = null;
-let slamPiece = null;
-let gameMode = "classic";
-let digRubbleRemaining = 0;
+const SWIPE_MIN_DIST = 30; // pixels
+const TAP_MAX_TIME = 250; // ms
 
-bestEl.textContent = bestScore;
-
-// Simple SFX helper: load audio files and play by name.
-const sfx = { enabled: true, sounds: {} };
-function loadSfx(name, url) {
+function onPointerDown(ev) {
+  if (gameOver) return;
+  _ptrDown = true;
+  _moved = false;
+  _startX = ev.clientX;
+  _startY = ev.clientY;
+  _startTime = Date.now();
   try {
-    const audio = new Audio(url);
-    audio.preload = "auto";
-    if (!sfx.sounds[name]) {
-      sfx.sounds[name] = [];
-    }
-    sfx.sounds[name].push(audio);
-  } catch (e) {
-    // ignore
+    ev.target.setPointerCapture(ev.pointerId);
+  } catch (e) {}
+}
+
+function onPointerMove(ev) {
+  if (!_ptrDown) return;
+  const dx = ev.clientX - _startX;
+  const dy = ev.clientY - _startY;
+  if (Math.hypot(dx, dy) > 10) _moved = true;
+}
+
+function onPointerUp(ev) {
+  if (!_ptrDown) return;
+  _ptrDown = false;
+  try {
+    ev.target.releasePointerCapture &&
+      ev.target.releasePointerCapture(ev.pointerId);
+  } catch (e) {}
+
+  const dx = ev.clientX - _startX;
+  const dy = ev.clientY - _startY;
+  const dt = Date.now() - _startTime;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  // Tap: small movement and quick
+  if (!_moved && dt < TAP_MAX_TIME && Math.hypot(dx, dy) < SWIPE_MIN_DIST) {
+    // Tap = move one (soft drop one row)
+    softDrop();
+    draw();
+    return;
   }
+
+  // Horizontal swipe
+  if (absX > absY && absX > SWIPE_MIN_DIST) {
+    if (dx > 0) movePiece(1);
+    else movePiece(-1);
+    draw();
+    return;
+  }
+
+  // Vertical swipe
+  if (absY > absX && absY > SWIPE_MIN_DIST) {
+    if (dy < 0) {
+      // swipe up = rotate
+      rotatePiece();
+    } else {
+      // swipe down = slam (hard drop)
+      hardDrop();
+    }
+    draw();
+    return;
+  }
+}
+
+// Attach to the game canvas for focused gestures
+boardCanvas.addEventListener("pointerdown", onPointerDown);
+boardCanvas.addEventListener("pointermove", onPointerMove);
+boardCanvas.addEventListener("pointerup", onPointerUp);
+boardCanvas.addEventListener("pointercancel", onPointerUp);
+window.addEventListener("blur", () => {
+  _ptrDown = false;
+});
+try {
+  const audio = new Audio(url);
+  audio.preload = "auto";
+  if (!sfx.sounds[name]) {
+    sfx.sounds[name] = [];
+  }
+  sfx.sounds[name].push(audio);
+} catch (e) {
+  // ignore
 }
 
 function playSfx(name) {
