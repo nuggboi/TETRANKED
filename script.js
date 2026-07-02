@@ -1,20 +1,20 @@
-const boardCanvas = document.getElementById('board');
-const boardCtx = boardCanvas.getContext('2d');
-const nextCanvas = document.getElementById('next');
-const nextCtx = nextCanvas.getContext('2d');
-const boardCard = document.querySelector('.board-card');
+const boardCanvas = document.getElementById("board");
+const boardCtx = boardCanvas.getContext("2d");
+const nextCanvas = document.getElementById("next");
+const nextCtx = nextCanvas.getContext("2d");
+const boardCard = document.querySelector(".board-card");
 
-const scoreEl = document.getElementById('score');
-const linesEl = document.getElementById('lines');
-const levelEl = document.getElementById('level');
-const bestEl = document.getElementById('best');
-const overlay = document.getElementById('overlay');
-const overlayTitle = document.getElementById('overlay-title');
-const overlayCopy = document.getElementById('overlay-copy');
-const startBtn = document.getElementById('startBtn');
-const pauseBtn = document.getElementById('pauseBtn');
-const restartBtn = document.getElementById('restartBtn');
-const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
+const scoreEl = document.getElementById("score");
+const linesEl = document.getElementById("lines");
+const levelEl = document.getElementById("level");
+const bestEl = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+const overlayTitle = document.getElementById("overlay-title");
+const overlayCopy = document.getElementById("overlay-copy");
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const restartBtn = document.getElementById("restartBtn");
+const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
 let COLS = 10;
 let ROWS = 20;
@@ -23,29 +23,63 @@ let PREVIEW_SIZE = 42;
 const CLEAR_ANIMATION_DURATION = 220;
 const SHAKE_DURATION = 220;
 const MODE_CONFIG = {
-  classic: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: 'Classic' },
-  mini: { cols: 8, rows: 16, blockSize: 24, previewSize: 30, label: 'Mini' },
-  dig: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: 'Dig' }
+  classic: {
+    cols: 10,
+    rows: 20,
+    blockSize: 30,
+    previewSize: 42,
+    label: "Classic",
+  },
+  mini: { cols: 8, rows: 16, blockSize: 24, previewSize: 30, label: "Mini" },
+  dig: { cols: 10, rows: 20, blockSize: 30, previewSize: 42, label: "Dig" },
 };
 const COLORS = {
-  I: '#61dafb',
-  O: '#ffd166',
-  T: '#c77dff',
-  S: '#4cd964',
-  Z: '#ff5f7d',
-  J: '#4d9de0',
-  L: '#ff9f1c',
-  G: '#8e97a6'
+  I: "#61dafb",
+  O: "#ffd166",
+  T: "#c77dff",
+  S: "#4cd964",
+  Z: "#ff5f7d",
+  J: "#4d9de0",
+  L: "#ff9f1c",
+  G: "#8e97a6",
 };
 
 const SHAPES = {
-  I: [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
-  O: [[1, 1], [1, 1]],
-  T: [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
-  S: [[0, 1, 1], [1, 1, 0], [0, 0, 0]],
-  Z: [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
-  J: [[1, 0, 0], [1, 1, 1], [0, 0, 0]],
-  L: [[0, 0, 1], [1, 1, 1], [0, 0, 0]]
+  I: [
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ],
+  O: [
+    [1, 1],
+    [1, 1],
+  ],
+  T: [
+    [0, 1, 0],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
+  S: [
+    [0, 1, 1],
+    [1, 1, 0],
+    [0, 0, 0],
+  ],
+  Z: [
+    [1, 1, 0],
+    [0, 1, 1],
+    [0, 0, 0],
+  ],
+  J: [
+    [1, 0, 0],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
+  L: [
+    [0, 0, 1],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
 };
 
 let board = [];
@@ -57,7 +91,7 @@ let level = 1;
 let gameOver = false;
 let paused = false;
 let dropInterval = null;
-let bestScore = Number(localStorage.getItem('tetranked-best') || 0);
+let bestScore = Number(localStorage.getItem("tetranked-best") || 0);
 let clearAnimationRows = [];
 let clearAnimationStartTime = 0;
 let clearAnimationFrame = null;
@@ -65,7 +99,7 @@ let boardShakeTimer = null;
 let slamFlashActive = false;
 let slamFlashTimer = null;
 let slamPiece = null;
-let gameMode = 'classic';
+let gameMode = "classic";
 let digRubbleRemaining = 0;
 
 bestEl.textContent = bestScore;
@@ -75,7 +109,7 @@ const sfx = { enabled: true, sounds: {} };
 function loadSfx(name, url) {
   try {
     const audio = new Audio(url);
-    audio.preload = 'auto';
+    audio.preload = "auto";
     if (!sfx.sounds[name]) {
       sfx.sounds[name] = [];
     }
@@ -99,14 +133,14 @@ function playSfx(name) {
 }
 
 // Example usage (place real files under `sounds/` or change paths):
-loadSfx('slam', 'sounds/slam/slam.wav');
-loadSfx('slam', 'sounds/slam/slamhigh.wav');
-loadSfx('slam', 'sounds/slam/slamlow.wav');
-loadSfx('clear', 'sounds/clear/clear.wav');
-loadSfx('clear', 'sounds/clear/clearhigh.wav');
-loadSfx('clear', 'sounds/clear/clearlow.wav');
-loadSfx('restart', 'sounds/restart.wav');
-loadSfx('rotate', 'sounds/rotate.wav');
+loadSfx("slam", "sounds/slam/slam.wav");
+loadSfx("slam", "sounds/slam/slamhigh.wav");
+loadSfx("slam", "sounds/slam/slamlow.wav");
+loadSfx("clear", "sounds/clear/clear.wav");
+loadSfx("clear", "sounds/clear/clearhigh.wav");
+loadSfx("clear", "sounds/clear/clearlow.wav");
+loadSfx("restart", "sounds/restart.wav");
+loadSfx("rotate", "sounds/rotate.wav");
 
 function applyModeConfig(mode) {
   const config = MODE_CONFIG[mode] || MODE_CONFIG.classic;
@@ -126,7 +160,7 @@ function selectMode(mode) {
   gameMode = mode;
   applyModeConfig(mode);
   modeButtons.forEach((button) => {
-    button.classList.toggle('active', button.dataset.mode === mode);
+    button.classList.toggle("active", button.dataset.mode === mode);
   });
   if (!currentPiece && !gameOver && !paused) {
     draw();
@@ -137,14 +171,14 @@ function setupBoardForMode() {
   board = createBoard();
   digRubbleRemaining = 0;
 
-  if (gameMode !== 'dig') return;
+  if (gameMode !== "dig") return;
 
   const startRow = Math.max(0, ROWS - 8);
   for (let y = startRow; y < ROWS; y += 1) {
     const gap = (y - startRow + 1) % COLS;
     for (let x = 0; x < COLS; x += 1) {
       if (x !== gap) {
-        board[y][x] = 'G';
+        board[y][x] = "G";
         digRubbleRemaining += 1;
       }
     }
@@ -161,7 +195,7 @@ function createPiece(type) {
     type,
     matrix,
     x: Math.floor(COLS / 2) - Math.ceil(matrix[0].length / 2),
-    y: 0
+    y: 0,
   };
 }
 
@@ -174,13 +208,14 @@ function randomPiece() {
 function spawnPiece() {
   currentPiece = nextPiece || randomPiece();
   nextPiece = randomPiece();
-  currentPiece.x = Math.floor(COLS / 2) - Math.ceil(currentPiece.matrix[0].length / 2);
+  currentPiece.x =
+    Math.floor(COLS / 2) - Math.ceil(currentPiece.matrix[0].length / 2);
   currentPiece.y = 0;
 
   if (collides(currentPiece, currentPiece.x, currentPiece.y)) {
     gameOver = true;
     paused = false;
-    updateOverlay('Game Over', 'Press restart to play again.');
+    updateOverlay("Game Over", "Press restart to play again.");
     clearInterval(dropInterval);
     dropInterval = null;
   }
@@ -192,13 +227,20 @@ function collides(piece, x, y) {
       if (!value) return false;
       const newX = x + colIndex;
       const newY = y + rowIndex;
-      return newX < 0 || newX >= COLS || newY >= ROWS || (newY >= 0 && board[newY][newX]);
-    })
+      return (
+        newX < 0 ||
+        newX >= COLS ||
+        newY >= ROWS ||
+        (newY >= 0 && board[newY][newX])
+      );
+    }),
   );
 }
 
 function rotateMatrix(matrix) {
-  return matrix[0].map((_, colIndex) => matrix.map((row) => row[colIndex]).reverse());
+  return matrix[0].map((_, colIndex) =>
+    matrix.map((row) => row[colIndex]).reverse(),
+  );
 }
 
 function rotatePiece() {
@@ -207,10 +249,16 @@ function rotatePiece() {
   const kicks = [0, -1, 1, -2, 2];
 
   for (const kick of kicks) {
-    if (!collides({ ...currentPiece, matrix: rotated }, currentPiece.x + kick, currentPiece.y)) {
+    if (
+      !collides(
+        { ...currentPiece, matrix: rotated },
+        currentPiece.x + kick,
+        currentPiece.y,
+      )
+    ) {
       currentPiece.matrix = rotated;
       currentPiece.x += kick;
-      playSfx('rotate');
+      playSfx("rotate");
       break;
     }
   }
@@ -224,20 +272,20 @@ function movePiece(dx) {
 }
 
 function triggerSlamShake() {
-  playSfx('slam');
+  playSfx("slam");
   if (!boardCard) return;
-  boardCard.classList.remove('shake');
+  boardCard.classList.remove("shake");
   void boardCard.offsetWidth;
-  boardCard.classList.add('shake');
+  boardCard.classList.add("shake");
   window.clearTimeout(boardShakeTimer);
   boardShakeTimer = window.setTimeout(() => {
-    boardCard.classList.remove('shake');
+    boardCard.classList.remove("shake");
   }, SHAKE_DURATION);
 
   slamFlashActive = true;
   slamPiece = {
     ...currentPiece,
-    matrix: currentPiece.matrix.map((row) => [...row])
+    matrix: currentPiece.matrix.map((row) => [...row]),
   };
   window.clearTimeout(slamFlashTimer);
   slamFlashTimer = window.setTimeout(() => {
@@ -314,8 +362,12 @@ function clearLines() {
   if (rowsToClear.length === 0) return [];
 
   let rubbleCleared = 0;
-  if (gameMode === 'dig') {
-    rubbleCleared = rowsToClear.reduce((count, rowIndex) => count + board[rowIndex].filter((cell) => cell === 'G').length, 0);
+  if (gameMode === "dig") {
+    rubbleCleared = rowsToClear.reduce(
+      (count, rowIndex) =>
+        count + board[rowIndex].filter((cell) => cell === "G").length,
+      0,
+    );
     digRubbleRemaining = Math.max(0, digRubbleRemaining - rubbleCleared);
   }
 
@@ -325,7 +377,7 @@ function clearLines() {
 
   if (score > bestScore) {
     bestScore = score;
-    localStorage.setItem('tetranked-best', bestScore);
+    localStorage.setItem("tetranked-best", bestScore);
     bestEl.textContent = bestScore;
   }
 
@@ -376,18 +428,22 @@ function finalizeClearAnimation() {
   clearAnimationRows = [];
   clearAnimationFrame = null;
 
-  playSfx('clear');
+  playSfx("clear");
 
   if (rowsToClear.length > 0) {
-    const remainingRows = board.filter((_, index) => !rowsToClear.includes(index));
-    const emptyRows = Array.from({ length: rowsToClear.length }, () => Array(COLS).fill(0));
+    const remainingRows = board.filter(
+      (_, index) => !rowsToClear.includes(index),
+    );
+    const emptyRows = Array.from({ length: rowsToClear.length }, () =>
+      Array(COLS).fill(0),
+    );
     board = [...emptyRows, ...remainingRows];
   }
 
-  if (gameMode === 'dig' && digRubbleRemaining <= 0) {
+  if (gameMode === "dig" && digRubbleRemaining <= 0) {
     gameOver = true;
     paused = false;
-    updateOverlay('Dig Complete', 'You cleared all the rubble.');
+    updateOverlay("Dig Complete", "You cleared all the rubble.");
     updateStats();
     draw();
     return;
@@ -408,11 +464,11 @@ function updateStats() {
 function updateOverlay(title, copy) {
   overlayTitle.textContent = title;
   overlayCopy.textContent = copy;
-  overlay.classList.add('visible');
+  overlay.classList.add("visible");
 }
 
 function hideOverlay() {
-  overlay.classList.remove('visible');
+  overlay.classList.remove("visible");
 }
 
 function updateDropSpeed() {
@@ -420,11 +476,14 @@ function updateDropSpeed() {
     clearInterval(dropInterval);
   }
 
-  dropInterval = setInterval(() => {
-    if (!paused && !gameOver) {
-      softDrop();
-    }
-  }, Math.max(120, 700 - (level - 1) * 60));
+  dropInterval = setInterval(
+    () => {
+      if (!paused && !gameOver) {
+        softDrop();
+      }
+    },
+    Math.max(120, 700 - (level - 1) * 60),
+  );
 }
 
 function startGame() {
@@ -443,7 +502,7 @@ function startGame() {
     clearAnimationFrame = null;
   }
   if (boardCard) {
-    boardCard.classList.remove('shake');
+    boardCard.classList.remove("shake");
   }
   slamFlashActive = false;
   slamPiece = null;
@@ -459,14 +518,14 @@ function pauseGame() {
   if (gameOver) return;
   paused = !paused;
   if (paused) {
-    updateOverlay('Paused', 'Press pause again to continue.');
+    updateOverlay("Paused", "Press pause again to continue.");
   } else {
     hideOverlay();
   }
 }
 
 function restartGame() {
-  playSfx('restart');
+  playSfx("restart");
   startGame();
 }
 
@@ -478,27 +537,45 @@ function drawCell(ctx, x, y, type, options = {}) {
   const inset = 1;
   const radius = 3;
 
-  ctx.fillStyle = type ? COLORS[type] : 'rgba(255,255,255,0.02)';
+  ctx.fillStyle = type ? COLORS[type] : "rgba(255,255,255,0.02)";
   ctx.beginPath();
-  ctx.roundRect(px + inset, py + inset, BLOCK_SIZE - inset * 2, BLOCK_SIZE - inset * 2, radius);
+  ctx.roundRect(
+    px + inset,
+    py + inset,
+    BLOCK_SIZE - inset * 2,
+    BLOCK_SIZE - inset * 2,
+    radius,
+  );
   ctx.fill();
 
   if (baseGlow > 0) {
     ctx.fillStyle = `rgba(255,255,255,${0.14 + 0.24 * baseGlow})`;
     ctx.beginPath();
-    ctx.roundRect(px + inset + 1, py + inset + 1, BLOCK_SIZE - inset * 2 - 2, BLOCK_SIZE - inset * 2 - 2, radius - 1);
+    ctx.roundRect(
+      px + inset + 1,
+      py + inset + 1,
+      BLOCK_SIZE - inset * 2 - 2,
+      BLOCK_SIZE - inset * 2 - 2,
+      radius - 1,
+    );
     ctx.fill();
   }
 
   if (isClearing) {
     ctx.fillStyle = `rgba(255,255,255,${0.25 + 1.05 * flash})`;
     ctx.beginPath();
-    ctx.roundRect(px + inset + 1, py + inset + 1, BLOCK_SIZE - inset * 2 - 2, BLOCK_SIZE - inset * 2 - 2, radius - 1);
+    ctx.roundRect(
+      px + inset + 1,
+      py + inset + 1,
+      BLOCK_SIZE - inset * 2 - 2,
+      BLOCK_SIZE - inset * 2 - 2,
+      radius - 1,
+    );
     ctx.fill();
   }
 
   if (slam) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(px + inset, py + inset);
@@ -512,16 +589,22 @@ function drawCell(ctx, x, y, type, options = {}) {
     ctx.stroke();
   }
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(px + inset, py + inset, BLOCK_SIZE - inset * 2, BLOCK_SIZE - inset * 2, radius);
+  ctx.roundRect(
+    px + inset,
+    py + inset,
+    BLOCK_SIZE - inset * 2,
+    BLOCK_SIZE - inset * 2,
+    radius,
+  );
   ctx.stroke();
 }
 
 function drawBoard() {
   boardCtx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
-  boardCtx.fillStyle = 'rgba(255,255,255,0.03)';
+  boardCtx.fillStyle = "rgba(255,255,255,0.03)";
   boardCtx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
 
   for (let y = 0; y < ROWS; y += 1) {
@@ -531,7 +614,7 @@ function drawBoard() {
       drawCell(boardCtx, x, y, board[y][x], {
         isClearing: flash > 0,
         flash,
-        baseGlow: isClearingRow ? 0.9 : 0
+        baseGlow: isClearingRow ? 0.9 : 0,
       });
     }
   }
@@ -542,7 +625,13 @@ function drawBoard() {
     pieceToDraw.matrix.forEach((row, rowIndex) => {
       row.forEach((value, colIndex) => {
         if (!value) return;
-        drawCell(boardCtx, pieceToDraw.x + colIndex, pieceToDraw.y + rowIndex, pieceToDraw.type, { slam: slamFlashActive && slamPiece });
+        drawCell(
+          boardCtx,
+          pieceToDraw.x + colIndex,
+          pieceToDraw.y + rowIndex,
+          pieceToDraw.type,
+          { slam: slamFlashActive && slamPiece },
+        );
       });
     });
     boardCtx.globalAlpha = 1;
@@ -551,25 +640,41 @@ function drawBoard() {
 
 function drawPreview() {
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-  nextCtx.fillStyle = 'rgba(255,255,255,0.03)';
+  nextCtx.fillStyle = "rgba(255,255,255,0.03)";
   nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
 
   const piece = nextPiece || currentPiece;
   if (!piece) return;
   const matrix = piece.matrix;
-  const offsetX = Math.floor((nextCanvas.width / PREVIEW_SIZE - matrix[0].length) / 2);
-  const offsetY = Math.floor((nextCanvas.height / PREVIEW_SIZE - matrix.length) / 2);
+  const offsetX = Math.floor(
+    (nextCanvas.width / PREVIEW_SIZE - matrix[0].length) / 2,
+  );
+  const offsetY = Math.floor(
+    (nextCanvas.height / PREVIEW_SIZE - matrix.length) / 2,
+  );
 
   matrix.forEach((row, rowIndex) => {
     row.forEach((value, colIndex) => {
       if (!value) return;
       nextCtx.fillStyle = COLORS[piece.type];
       nextCtx.beginPath();
-      nextCtx.roundRect(offsetX * PREVIEW_SIZE + colIndex * PREVIEW_SIZE + 2, offsetY * PREVIEW_SIZE + rowIndex * PREVIEW_SIZE + 2, PREVIEW_SIZE - 4, PREVIEW_SIZE - 4, 8);
+      nextCtx.roundRect(
+        offsetX * PREVIEW_SIZE + colIndex * PREVIEW_SIZE + 2,
+        offsetY * PREVIEW_SIZE + rowIndex * PREVIEW_SIZE + 2,
+        PREVIEW_SIZE - 4,
+        PREVIEW_SIZE - 4,
+        8,
+      );
       nextCtx.fill();
-      nextCtx.strokeStyle = 'rgba(255,255,255,0.12)';
+      nextCtx.strokeStyle = "rgba(255,255,255,0.12)";
       nextCtx.beginPath();
-      nextCtx.roundRect(offsetX * PREVIEW_SIZE + colIndex * PREVIEW_SIZE + 2, offsetY * PREVIEW_SIZE + rowIndex * PREVIEW_SIZE + 2, PREVIEW_SIZE - 4, PREVIEW_SIZE - 4, 8);
+      nextCtx.roundRect(
+        offsetX * PREVIEW_SIZE + colIndex * PREVIEW_SIZE + 2,
+        offsetY * PREVIEW_SIZE + rowIndex * PREVIEW_SIZE + 2,
+        PREVIEW_SIZE - 4,
+        PREVIEW_SIZE - 4,
+        8,
+      );
       nextCtx.stroke();
     });
   });
@@ -580,50 +685,50 @@ function draw() {
   drawPreview();
 }
 
-window.addEventListener('keydown', (event) => {
+window.addEventListener("keydown", (event) => {
   const key = event.key;
-  if (key === 'p' || key === 'P') {
+  if (key === "p" || key === "P") {
     event.preventDefault();
     pauseGame();
     return;
   }
 
-  if (key === 'r' || key === 'R') {
+  if (key === "r" || key === "R") {
     event.preventDefault();
     restartGame();
     return;
   }
 
   if (gameOver || paused || !currentPiece) {
-    if (key === 'Enter') {
+    if (key === "Enter") {
       startGame();
     }
     return;
   }
 
   switch (key) {
-    case 'ArrowLeft':
+    case "ArrowLeft":
       event.preventDefault();
       movePiece(-1);
       break;
-    case 'ArrowRight':
+    case "ArrowRight":
       event.preventDefault();
       movePiece(1);
       break;
-    case 'ArrowDown':
+    case "ArrowDown":
       event.preventDefault();
       softDrop();
       break;
-    case 'ArrowUp':
-    case 'z':
-    case 'Z':
+    case "ArrowUp":
+    case "z":
+    case "Z":
       event.preventDefault();
       rotatePiece();
       break;
-    case ' ':
-    case 'Spacebar':
-    case 'x':
-    case 'X':
+    case " ":
+    case "Spacebar":
+    case "x":
+    case "X":
       event.preventDefault();
       hardDrop();
       break;
@@ -634,14 +739,105 @@ window.addEventListener('keydown', (event) => {
   draw();
 });
 
-startBtn.addEventListener('click', startGame);
-pauseBtn.addEventListener('click', pauseGame);
-restartBtn.addEventListener('click', restartGame);
+startBtn.addEventListener("click", startGame);
+pauseBtn.addEventListener("click", pauseGame);
+restartBtn.addEventListener("click", restartGame);
 modeButtons.forEach((button) => {
-  button.addEventListener('click', () => selectMode(button.dataset.mode));
+  button.addEventListener("click", () => selectMode(button.dataset.mode));
 });
 
 applyModeConfig(gameMode);
 setupBoardForMode();
 updateStats();
 draw();
+
+// --- Mobile D-pad support ---
+let dpadRepeatTimer = null;
+let dpadRepeatAction = null;
+
+function clearDpadRepeat() {
+  if (dpadRepeatTimer) {
+    clearInterval(dpadRepeatTimer);
+    dpadRepeatTimer = null;
+    dpadRepeatAction = null;
+  }
+}
+
+function dpadActionOnce(action) {
+  switch (action) {
+    case "left":
+      movePiece(-1);
+      break;
+    case "right":
+      movePiece(1);
+      break;
+    case "down":
+      softDrop();
+      break;
+    case "up":
+      rotatePiece();
+      break;
+    case "slam":
+      hardDrop();
+      break;
+    default:
+      break;
+  }
+  draw();
+}
+
+function dpadActionStart(action) {
+  // Immediate action
+  dpadActionOnce(action);
+
+  // Start repeating for continuous actions (left/right/down)
+  if (action === "left" || action === "right") {
+    dpadRepeatAction = action;
+    dpadRepeatTimer = setInterval(() => {
+      dpadActionOnce(action);
+    }, 120);
+  } else if (action === "down") {
+    dpadRepeatAction = action;
+    dpadRepeatTimer = setInterval(() => {
+      softDrop();
+      draw();
+    }, 120);
+  }
+}
+
+function setupDpadControls() {
+  const dpad = document.querySelector(".dpad");
+  if (!dpad) return;
+  const buttons = Array.from(dpad.querySelectorAll(".dpad-button"));
+
+  buttons.forEach((btn) => {
+    const action = btn.dataset.action;
+
+    // Use pointer events for broad device support
+    btn.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      // capture pointer to ensure we receive up/cancel
+      try {
+        btn.setPointerCapture(ev.pointerId);
+      } catch (e) {}
+      dpadActionStart(action);
+    });
+
+    btn.addEventListener("pointerup", (ev) => {
+      ev.preventDefault();
+      try {
+        btn.releasePointerCapture && btn.releasePointerCapture(ev.pointerId);
+      } catch (e) {}
+      clearDpadRepeat();
+    });
+
+    btn.addEventListener("pointercancel", () => clearDpadRepeat());
+    btn.addEventListener("pointerleave", () => clearDpadRepeat());
+  });
+
+  // Clear on window pointer up as well (in case pointer moves off the button)
+  window.addEventListener("pointerup", clearDpadRepeat);
+  window.addEventListener("blur", clearDpadRepeat);
+}
+
+setupDpadControls();
