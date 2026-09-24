@@ -16,26 +16,8 @@ const pauseBtn = document.getElementById("pauseBtn");
 const restartBtn = document.getElementById("restartBtn");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 const playerNameInput = document.getElementById("playerName");
-const leaderboardList = document.getElementById("leaderboardList");
-const leaderboardStatus = document.getElementById("leaderboardStatus");
 
-const SCORE_DB_PATH = "scores";
-const LEADERBOARD_LIMIT = 10;
 const SCORE_NAME_STORAGE_KEY = "tetranked-player-name";
-let scoreSubmittedForRun = false;
-let leaderboardLoading = false;
-let db = null;
-
-if (window.firebase && window.firebase.database) {
-  try {
-    db = window.firebase.database();
-  } catch (error) {
-    console.warn("Firebase database unavailable", error);
-    db = null;
-  }
-} else {
-  console.warn("Firebase database SDK not available");
-}
 
 const SHAPES = {
   I: [
@@ -105,6 +87,7 @@ let clearAnimationRows = [];
 let clearAnimationStartTime = 0;
 let clearAnimationFrame = null;
 let boardShakeTimer = null;
+let slamFlashTimer = null;
 let slamFlashActive = false;
 let slamPiece = null;
 let digRubbleRemaining = 0;
@@ -576,127 +559,23 @@ function getPlayerName() {
 }
 
 function setLeaderboardStatus(message, isError = false) {
-  if (!leaderboardStatus) return;
-  leaderboardStatus.textContent = message;
-  leaderboardStatus.classList.toggle("error", isError);
+  // Leaderboard removed
 }
 
 function renderLeaderboard(entries) {
-  if (!leaderboardList) return;
-
-  leaderboardList.innerHTML = "";
-  if (!entries.length) {
-    const emptyItem = document.createElement("li");
-    emptyItem.className = "empty";
-    emptyItem.textContent = "No scores yet";
-    leaderboardList.appendChild(emptyItem);
-    return;
-  }
-
-  entries.forEach((entry, index) => {
-    const item = document.createElement("li");
-    item.className = "leaderboard-item";
-
-    const rank = document.createElement("span");
-    rank.className = "rank";
-    rank.textContent = `#${index + 1}`;
-
-    const details = document.createElement("div");
-    details.className = "leaderboard-details";
-
-    const name = document.createElement("strong");
-    name.textContent = entry.playerName || "Player";
-
-    const scoreLine = document.createElement("span");
-    scoreLine.textContent = entry.score || 0;
-
-    details.appendChild(name);
-    details.appendChild(scoreLine);
-    item.appendChild(rank);
-    item.appendChild(details);
-    leaderboardList.appendChild(item);
-  });
+  // Leaderboard removed
 }
 
 function loadLeaderboard() {
-  if (!db) {
-    setLeaderboardStatus("Leaderboard unavailable", true);
-    renderLeaderboard([]);
-    return Promise.resolve();
-  }
-
-  if (leaderboardLoading) return Promise.resolve();
-
-  leaderboardLoading = true;
-  setLeaderboardStatus("Loading leaderboard…");
-
-  const timeoutId = window.setTimeout(() => {
-    if (leaderboardLoading) {
-      leaderboardLoading = false;
-      setLeaderboardStatus("Leaderboard unavailable", true);
-      renderLeaderboard([]);
-    }
-  }, 5000);
-
-  return db
-    .ref(SCORE_DB_PATH)
-    .orderByChild("score")
-    .limitToLast(LEADERBOARD_LIMIT)
-    .once("value")
-    .then((snapshot) => {
-      const entries = [];
-      snapshot.forEach((child) => {
-        entries.push({ id: child.key, ...child.val() });
-      });
-
-      entries.sort((a, b) => (b.score || 0) - (a.score || 0));
-      renderLeaderboard(entries.slice(0, LEADERBOARD_LIMIT));
-
-      if (!entries.length) {
-        setLeaderboardStatus("No scores yet — be first!");
-      } else {
-        setLeaderboardStatus("");
-      }
-    })
-    .catch((error) => {
-      console.error("Unable to load scores", error);
-      setLeaderboardStatus("Leaderboard unavailable", true);
-      renderLeaderboard([]);
-    })
-    .finally(() => {
-      window.clearTimeout(timeoutId);
-      leaderboardLoading = false;
-    });
+  return Promise.resolve();
 }
 
 function saveScore() {
-  if (!db || scoreSubmittedForRun || !score) return Promise.resolve(false);
-
-  scoreSubmittedForRun = true;
-  const name = getPlayerName();
-  setLeaderboardStatus("Saving score…");
-
-  return db
-    .ref(SCORE_DB_PATH)
-    .push({
-      playerName: name,
-      score,
-      mode: gameMode,
-      createdAt: Date.now(),
-    })
-    .then(() => loadLeaderboard())
-    .then(() => true)
-    .catch((error) => {
-      console.error("Unable to save score", error);
-      scoreSubmittedForRun = false;
-      setLeaderboardStatus("Could not save score", true);
-      return false;
-    });
+  return Promise.resolve(false);
 }
 
 function handleGameOver() {
-  if (!gameOver || scoreSubmittedForRun || !score) return;
-  saveScore();
+  // Leaderboard removed
 }
 
 function updateStats() {
@@ -1009,8 +888,6 @@ if (playerNameInput) {
     localStorage.setItem(SCORE_NAME_STORAGE_KEY, trimmed);
   });
 }
-
-loadLeaderboard();
 
 // --- Mobile D-pad support ---
 let dpadRepeatTimer = null;

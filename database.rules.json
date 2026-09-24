@@ -1,8 +1,0 @@
-{
-  "rules": {
-    "scores": {
-      ".read": true,
-      ".write": true
-    }
-  }
-}
